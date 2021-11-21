@@ -1,0 +1,41 @@
+extensions:
+  health_check:
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:55681
+
+processors:
+  batch/traces:
+    timeout: 1s
+    send_batch_size: 50
+  batch/metrics:
+    timeout: 60s
+
+exporters:
+  dynatrace:
+   # optional - Dimensions specified here will be included as a dimension on every exported metric
+   #            unless that metric already has a dimension with the same key.
+   # optional - prefix will be prepended to each metric name in prefix.name format
+   prefix: otpcol
+   endpoint: "https://<YOURTENANT>.live.dynatrace.com/api/v2/metrics/ingest"
+   # Token must at least have the Ingest metrics (metrics.ingest) permission
+   api_token: "dt0c01.4HUXDACSOKDEOADCEI.CMDWEWKJODXPDHVDRNWRLYZJ32FAHLCP7VIQBJPBK44FRWMJGQX4547JQDZKE"
+  otlphttp:
+    endpoint: "https://<YOURTENANT>.live.dynatrace.com/api/v2/otlp"
+    headers: {"Authorization": "Api-Token dt0c01.4HUXDACSOKDEOADCEI.CMDWEWKJODXPDHVDRNWRLYZJ32FAHLCP7VIQBJPBK44FRWMJGQX4547JQDZKE"}
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [dynatrace]
+    traces:
+      receivers: [otlp]
+      processors: []
+      exporters: [otlphttp]      
+  extensions: [health_check]
